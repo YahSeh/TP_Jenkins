@@ -1,0 +1,38 @@
+# Maven
+target/
+*.class
+*.jar
+*.war
+*.ear
+
+# Tests / couverture
+surefire-reports/
+failsafe-reports/
+jacoco.exec
+*.exec
+
+# Secrets
+tokens.txt
+.env
+*.env
+*.key
+*.pem
+
+# Jenkins / Sonar locaux
+.sonar/
+.scannerwork/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+.classpath
+.project
+.settings/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Files
+.\Pipeline Int\303\251gration Continue Jenkins.pdf
