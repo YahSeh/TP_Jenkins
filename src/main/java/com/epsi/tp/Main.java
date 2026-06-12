@@ -1,12 +1,24 @@
 package com.epsi.tp;
 
+import java.util.logging.Logger;
+
 public class Main {
+    private static final Logger LOGGER = Logger.getLogger(Main.class.getName());
+
     public static void main(String[] args) {
-        // Mauvaise pratique : System.out.println au lieu d'un vrai Logger
-        System.out.println("Démarrage de l'application...");
-        
+        LOGGER.info("Demarrage de l'application...");
+
         UserService userService = new UserService();
-        userService.login("admin", "password123");
+
+        String username = System.getenv("APP_LOGIN_USER");
+        String password = System.getenv("APP_LOGIN_PASSWORD");
+
+        if (username != null && password != null) {
+            userService.login(username, password);
+        } else {
+            LOGGER.info("Aucun identifiant de connexion fourni.");
+        }
+
         userService.getUserDetails("john_doe");
     }
 }
