@@ -49,12 +49,19 @@ pipeline {
             }
         }
 
-        stage('Package & Docker Build') {
+        stage('Package') {
             steps {
-                echo 'Creation du JAR executable et de l image Docker...'
+                echo 'Creation du JAR executable...'
                 sh 'mvn clean package -DskipTests'
-                sh 'docker build -t epsi/bad-practices-app:latest .'
             }
+        }
+        
+        //stage('Package & Docker Build') {
+        //    steps {
+        //        echo 'Creation du JAR executable et de l image Docker...'
+        //        sh 'mvn clean package -DskipTests'
+        //        sh 'docker build -t epsi/bad-practices-app:latest .'
+        //    }
         }
     }
 }
