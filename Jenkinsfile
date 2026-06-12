@@ -55,13 +55,13 @@ pipeline {
                 sh 'mvn clean package -DskipTests'
             }
         }
-        
+
         //stage('Package & Docker Build') {
         //    steps {
         //        echo 'Creation du JAR executable et de l image Docker...'
         //        sh 'mvn clean package -DskipTests'
         //        sh 'docker build -t epsi/bad-practices-app:latest .'
         //    }
-        }
+        //}
     }
 }
