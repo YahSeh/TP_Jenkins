@@ -2,96 +2,82 @@ package com.epsi.tp;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.Statement;
-// Mauvaise pratique : import inutilisé
-import java.util.List;
+import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class UserService {
+    private static final Logger LOGGER = Logger.getLogger(UserService.class.getName());
 
-    // Faille de sécurité majeure : mot de passe en dur
-    private String DB_PASSWORD = "super_secret_password_123!";
-    
-    // Mauvaise pratique : variable inutilisée
-    private int unusedCounter = 0;
+    private static final String ADMIN_USER_ENV = "APP_ADMIN_USER";
+    private static final String ADMIN_PASSWORD_ENV = "APP_ADMIN_PASSWORD";
+    private static final String DB_URL_ENV = "DB_URL";
+    private static final String DB_USER_ENV = "DB_USER";
+    private static final String DB_PASSWORD_ENV = "DB_PASSWORD";
 
-    public void login(String username, String password) {
-        // Mauvaise pratique : variable locale inutilisée
-        boolean isLoggedIn = false;
-        
-        // Mauvaise pratique : System.out.println au lieu d'un Logger
-        System.out.println("Tentative de connexion de l'utilisateur : " + username);
+    public boolean login(String username, String password) {
+        LOGGER.log(Level.INFO, "Tentative de connexion pour l'utilisateur : {0}", username);
 
-        // Mauvaise pratique : identifiants en dur dans le code
-        if (username.equals("admin") && password.equals("admin")) {
-            System.out.println("Administrateur connecté avec succès.");
-            isLoggedIn = true;
+        String expectedUsername = System.getenv(ADMIN_USER_ENV);
+        String expectedPassword = System.getenv(ADMIN_PASSWORD_ENV);
+
+        if (isBlank(expectedUsername) || isBlank(expectedPassword)) {
+            LOGGER.warning("Les identifiants administrateur ne sont pas configures.");
+            return false;
+        }
+
+        boolean authenticated = expectedUsername.equals(username) && expectedPassword.equals(password);
+        if (authenticated) {
+            LOGGER.info("Connexion reussie.");
         } else {
-            System.out.println("Identifiants invalides.");
+            LOGGER.warning("Connexion refusee.");
         }
-        
-        try {
-            // Logique factice pour déclencher une exception
-            int result = 10 / 0;
-        } catch (Exception e) {
-            // Mauvaise pratique : bloc catch vide (l'erreur est ignorée silencieusement)
-        }
+
+        return authenticated;
     }
 
-    public void getUserDetails(String username) {
-        Connection conn = null;
-        Statement stmt = null;
-        ResultSet rs = null;
+    public List<String> getUserDetails(String username) {
+        List<String> users = new ArrayList<>();
 
-        try {
-            // Faille : mot de passe en dur utilisé ici
-            conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/mydb", "root", DB_PASSWORD);
-            stmt = conn.createStatement();
-            
-            // Faille de sécurité majeure : Injection SQL possible via concaténation
-            String query = "SELECT * FROM users WHERE username = '" + username + "'";
-            rs = stmt.executeQuery(query);
-            
-            while (rs.next()) {
-                System.out.println("Utilisateur trouvé : " + rs.getString("username"));
-            }
-        } catch (Exception e) {
-            // Mauvaise pratique : on attrape une exception générique et on print la stacktrace sans logger
-            e.printStackTrace();
-        } finally {
-            // Mauvaise pratique : gestion archaïque des ressources (pas de try-with-resources)
-            // avec des catch vides
-            if (rs != null) {
-                try { rs.close(); } catch (Exception e) {}
-            }
-            if (stmt != null) {
-                try { stmt.close(); } catch (Exception e) {}
-            }
-            if (conn != null) {
-                try { conn.close(); } catch (Exception e) {}
-            }
+        if (isBlank(username)) {
+            LOGGER.warning("Le nom d'utilisateur est obligatoire.");
+            return users;
         }
+
+        String dbUrl = System.getenv(DB_URL_ENV);
+        String dbUser = System.getenv(DB_USER_ENV);
+        String dbPassword = System.getenv(DB_PASSWORD_ENV);
+
+        if (isBlank(dbUrl) || isBlank(dbUser) || isBlank(dbPassword)) {
+            LOGGER.warning("La connexion a la base de donnees n'est pas configuree.");
+            return users;
+        }
+
+        String query = "SELECT username FROM users WHERE username = ?";
+
+        try (
+                Connection connection = DriverManager.getConnection(dbUrl, dbUser, dbPassword);
+                PreparedStatement statement = connection.prepareStatement(query)
+        ) {
+            statement.setString(1, username);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    users.add(resultSet.getString("username"));
+                }
+            }
+        } catch (SQLException exception) {
+            LOGGER.log(Level.WARNING, "Impossible de recuperer les informations utilisateur.", exception);
+        }
+
+        return users;
     }
-    
-    // Mauvaise pratique : méthode inutilement complexe avec de nombreux "if" imbriqués (complexité cyclomatique élevée)
-    public void complexMethod(int a, int b, int c) {
-        if (a > 0) {
-            if (b > 0) {
-                if (c > 0) {
-                    System.out.println("Tous positifs");
-                } else {
-                    System.out.println("C est négatif");
-                }
-            } else {
-                if (c > 0) {
-                    System.out.println("B est négatif");
-                } else {
-                    System.out.println("B et C sont négatifs");
-                }
-            }
-        } else {
-            System.out.println("A est négatif");
-        }
+
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
     }
 }
