@@ -7,6 +7,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -19,11 +21,21 @@ public class UserService {
     private static final String DB_USER_ENV = "DB_USER";
     private static final String DB_PASSWORD_ENV = "DB_PASSWORD";
 
-    public boolean login(String username, String password) {
-        LOGGER.log(Level.INFO, "Tentative de connexion pour l'utilisateur : {0}", username);
+    private final Function<String, String> environment;
 
-        String expectedUsername = System.getenv(ADMIN_USER_ENV);
-        String expectedPassword = System.getenv(ADMIN_PASSWORD_ENV);
+    public UserService() {
+        this(System::getenv);
+    }
+
+    UserService(Function<String, String> environment) {
+        this.environment = Objects.requireNonNull(environment);
+    }
+
+    public boolean login(String username, String password) {
+        LOGGER.log(Level.INFO, "Tentative de connexion pour utilisateur : {0}", username);
+
+        String expectedUsername = environment.apply(ADMIN_USER_ENV);
+        String expectedPassword = environment.apply(ADMIN_PASSWORD_ENV);
 
         if (isBlank(expectedUsername) || isBlank(expectedPassword)) {
             LOGGER.warning("Les identifiants administrateur ne sont pas configures.");
@@ -48,9 +60,9 @@ public class UserService {
             return users;
         }
 
-        String dbUrl = System.getenv(DB_URL_ENV);
-        String dbUser = System.getenv(DB_USER_ENV);
-        String dbPassword = System.getenv(DB_PASSWORD_ENV);
+        String dbUrl = environment.apply(DB_URL_ENV);
+        String dbUser = environment.apply(DB_USER_ENV);
+        String dbPassword = environment.apply(DB_PASSWORD_ENV);
 
         if (isBlank(dbUrl) || isBlank(dbUser) || isBlank(dbPassword)) {
             LOGGER.warning("La connexion a la base de donnees n'est pas configuree.");
@@ -77,7 +89,7 @@ public class UserService {
         return users;
     }
 
-    private boolean isBlank(String value) {
-        return value == null || value.trim().isEmpty();
+    private static boolean isBlank(String value) {
+        return value == null || value.isBlank();
     }
 }
